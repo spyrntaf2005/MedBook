@@ -6,13 +6,19 @@ document.addEventListener('DOMContentLoaded', function () {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 320px;
+            width: 380px; /* Μεγαλύτερο αρχικό πλάτος */
+            height: 550px; /* Μεγαλύτερο αρχικό ύψος */
+            min-width: 300px;
+            min-height: 400px;
+            max-width: 90vw;
+            max-height: 90vh;
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 5px 25px rgba(0,0,0,0.2);
             display: none;
             flex-direction: column;
             overflow: hidden;
+            resize: both; /* Επιτρέπει την αλλαγή μεγέθους με τον κέρσορα */
             z-index: 1000;
             font-family: 'Inter', sans-serif;
             border: 1px solid #e2e8f0;
@@ -28,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
             justify-content: space-between;
             align-items: center;
             font-weight: 600;
+            flex-shrink: 0; /* Να μην μικραίνει το header όταν μικραίνει το παράθυρο */
         }
         .chatbot-close {
             background: none;
@@ -37,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
             cursor: pointer;
         }
         .chatbot-messages {
-            height: 300px;
+            flex: 1; /* Παίρνει όλο τον διαθέσιμο χώρο, αντί για σταθερό ύψος */
             overflow-y: auto;
             padding: 15px;
             display: flex;
