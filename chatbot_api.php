@@ -13,7 +13,7 @@ header('Content-Type: application/json');
  * Παίρνει ως όρισμα το μήνυμα του χρήστη ($prompt) και επιστρέφει την απάντηση της Τεχνητής Νοημοσύνης.
  */
 function getGeminiResponse($prompt) {
-    // Το κλειδί πρόσβασης για το API της Google φορτώνεται πλέον από ασφαλές αρχείο
+    // Το κλειδί πρόσβασης για το API της Google φορτώνεται πλέον από local αρχείο
     $secrets = require 'config/secrets.php';
     $apiKey = $secrets['gemini_api_key'];
     
