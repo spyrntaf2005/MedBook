@@ -44,21 +44,7 @@ session_start();
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar">
-  <div class="navbar-brand">
-    <span class="icon">🏥</span>
-    <span>MedBook</span>
-  </div>
-  <div class="navbar-center">
-    <a href="index.php" style="color:var(--primary);font-weight:700;">Αρχική</a>
-    <a href="about.php">Σχετικά με εμάς</a>
-    <a href="services.php">Οι Υπηρεσίες μας</a>
-    <a href="appointment.php">Κλείστε Ραντεβού</a>
-  </div>
-  <div class="navbar-right">
-    <a href="login.php" class="btn-nav-login">Σύνδεση Ιατρού</a>
-  </div>
-</nav>
+<?php include 'includes/navbar.php'; ?>
 
 <!-- HERO -->
 <section class="hero">
@@ -113,9 +99,7 @@ session_start();
   </div>
 </section>
 
-<footer>
-  <p>© 2026 MedBook &mdash; Σύστημα Διαχείρισης Ιατρικών Ραντεβού | Developed by <span>SPNT INTUSTRIES </span></p>
-</footer>
+<?php include 'includes/footer.php'; ?>
 
 <script src="js/main.js"></script>
 <script src="js/chatbot.js?v=8"></script>

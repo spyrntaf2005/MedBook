@@ -35,15 +35,7 @@ foreach ($months as $en => $gr) $dateFormatted = str_replace($en, $gr, $dateForm
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="navbar-brand">
-    <span class="icon">🏥</span>
-    <span>MedBook</span>
-  </div>
-  <div class="navbar-links">
-    <a href="index.php">Αρχική</a>
-  </div>
-</nav>
+<?php include 'includes/navbar.php'; ?>
 
 <div class="confirm-wrapper">
   <div class="confirm-card">
@@ -88,9 +80,7 @@ foreach ($months as $en => $gr) $dateFormatted = str_replace($en, $gr, $dateForm
   </div>
 </div>
 
-<footer>
-  <p>© 2026 MedBook &mdash; Σύστημα Διαχείρισης Ιατρικών Ραντεβού</p>
-</footer>
+<?php include 'includes/footer.php'; ?>
 
 </body>
 </html>

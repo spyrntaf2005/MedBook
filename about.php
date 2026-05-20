@@ -16,28 +16,14 @@
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar">
-  <div class="navbar-brand">
-    <span class="icon">🏥</span>
-    <span>MedBook</span>
-  </div>
-  <div class="navbar-center">
-    <a href="index.php">Αρχική</a>
-    <a href="about.php" style="color:var(--primary);font-weight:700;">Σχετικά με εμάς</a>
-    <a href="services.php">Οι Υπηρεσίες μας</a>
-    <a href="appointment.php">Κλείστε Ραντεβού</a>
-  </div>
-  <div class="navbar-right">
-    <a href="login.php" class="btn-nav-login">Σύνδεση Ιατρού</a>
-  </div>
-</nav>
+<?php include 'includes/navbar.php'; ?>
 
 <!-- ABOUT SECTION -->
 <section class="section" style="min-height: calc(100vh - 140px);">
   <div class="container">
     
     <div class="card" style="max-width: 760px; margin: 0 auto;">
-      <h2 class="card-title" style="margin-bottom: 1rem;">👨‍⚕️ Σχετικά με το Ιατρείο μας</h2>
+      <h2 class="card-title" style="margin-bottom: 1rem;">Σχετικά με το Ιατρείο μας</h2>
       <p style="line-height:1.7; color:var(--text-muted); margin-bottom:1.5rem;">
         Καλώς ήρθατε στο ιατρείο μας. Παρέχουμε ιατρικές υπηρεσίες υψηλού επιπέδου, με έμφαση στην πρόληψη, την έγκαιρη διάγνωση και τη σωστή θεραπεία. 
         Ο χώρος μας είναι εξοπλισμένος με σύγχρονα μηχανήματα, ενώ παράλληλα φροντίζουμε να διατηρούμε ένα φιλικό και ασφαλές περιβάλλον για όλους τους ασθενείς μας.
@@ -71,9 +57,7 @@
   </div>
 </section>
 
-<footer>
-  <p>© 2026 MedBook &mdash; Σύστημα Διαχείρισης Ιατρικών Ραντεβού | Developed by <span>SPNT INTUSTRIES </span></p>
-</footer>
+<?php include 'includes/footer.php'; ?>
 
 <script src="js/main.js"></script>
 <script src="js/chatbot.js?v=8"></script>
