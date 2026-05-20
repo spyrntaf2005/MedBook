@@ -91,6 +91,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/chatbot.js?v=7"></script>
+<script src="js/chatbot.js?v=8"></script>
 </body>
 </html>

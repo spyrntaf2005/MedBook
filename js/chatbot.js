@@ -18,15 +18,9 @@ document.addEventListener('DOMContentLoaded', function () {
             font-family: 'Inter', sans-serif;
             border: 1px solid #e2e8f0;
         }
-        .chatbot-resizer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 15px;
-            height: 15px;
-            cursor: nwse-resize;
-            z-index: 1001;
-        }
+        .chatbot-resize-y { position: absolute; top: -3px; left: 0; right: 0; height: 8px; cursor: ns-resize; z-index: 1001; }
+        .chatbot-resize-x { position: absolute; top: 0; bottom: 0; left: -3px; width: 8px; cursor: ew-resize; z-index: 1001; }
+        .chatbot-resize-xy { position: absolute; top: -5px; left: -5px; width: 15px; height: 15px; cursor: nwse-resize; z-index: 1002; }
         .chatbot-container.active {
             display: flex;
         }
@@ -154,33 +148,60 @@ document.addEventListener('DOMContentLoaded', function () {
     document.body.appendChild(chatContainer);
 
     // Custom Resizer Logic
-    const resizer = document.createElement('div');
-    resizer.className = 'chatbot-resizer';
-    chatContainer.appendChild(resizer);
-
-    let isResizing = false;
-    resizer.addEventListener('mousedown', (e) => {
-        isResizing = true;
-        e.preventDefault(); // Αποφυγή επιλογής κειμένου
+    const resizers = ['y', 'x', 'xy'].map(dir => {
+        const r = document.createElement('div');
+        r.className = `chatbot-resize-${dir}`;
+        r.dataset.dir = dir;
+        chatContainer.appendChild(r);
+        return r;
     });
 
-    window.addEventListener('mousemove', (e) => {
+    let resizeDir = null;
+    let isResizing = false;
+
+    const startResize = (e) => {
+        isResizing = true;
+        resizeDir = e.target.dataset.dir;
+        e.preventDefault();
+    };
+
+    resizers.forEach(r => {
+        r.addEventListener('mousedown', startResize);
+        r.addEventListener('touchstart', startResize, {passive: false});
+    });
+
+    const doResize = (e) => {
         if (!isResizing) return;
-        // Υπολογισμός νέου μεγέθους, επειδή το παράθυρο είναι fixed στο κάτω-δεξιά (bottom: 20px, right: 20px)
-        let newWidth = window.innerWidth - e.clientX - 20;
-        let newHeight = window.innerHeight - e.clientY - 20;
         
-        // Όρια μεγέθους
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        let newWidth = chatContainer.offsetWidth;
+        let newHeight = chatContainer.offsetHeight;
+
+        if (resizeDir.includes('x')) {
+            newWidth = window.innerWidth - clientX - 20;
+        }
+        if (resizeDir.includes('y')) {
+            newHeight = window.innerHeight - clientY - 20;
+        }
+        
         newWidth = Math.max(300, Math.min(newWidth, window.innerWidth * 0.9));
         newHeight = Math.max(400, Math.min(newHeight, window.innerHeight * 0.9));
         
-        chatContainer.style.width = newWidth + 'px';
-        chatContainer.style.height = newHeight + 'px';
-    });
+        if (resizeDir.includes('x')) chatContainer.style.width = newWidth + 'px';
+        if (resizeDir.includes('y')) chatContainer.style.height = newHeight + 'px';
+    };
 
-    window.addEventListener('mouseup', () => {
+    const stopResize = () => {
         isResizing = false;
-    });
+        resizeDir = null;
+    };
+
+    window.addEventListener('mousemove', doResize);
+    window.addEventListener('touchmove', doResize, {passive: false});
+    window.addEventListener('mouseup', stopResize);
+    window.addEventListener('touchend', stopResize);
 
     // Logic
     const chatMessages = document.getElementById('chatMessages');
