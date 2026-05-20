@@ -1,6 +1,6 @@
 <?php
 /**
- * update_status.php — AJAX endpoint για αλλαγή κατάστασης ραντεβού
+ * update_status.php - AJAX endpoint για αλλαγή κατάστασης ραντεβού
  */
 session_start();
 require_once 'config/db.php';

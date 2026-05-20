@@ -1,30 +1,32 @@
 <?php
 /**
- * login.php — Σελίδα Σύνδεσης Ιατρού
+ * login.php - Σελίδα Σύνδεσης Ιατρού
+ * Εδώ οι ιατροί κάνουν αυθεντικοποίηση για να μπουν στο διαχειριστικό.
  */
-session_start();
-require_once 'config/db.php';
+session_start(); // Έναρξη του session
+require_once 'config/db.php'; // Σύνδεση με τη βάση δεδομένων
 
-// Αν είναι ήδη συνδεδεμένος, redirect στο dashboard
+// Προστασία: Αν είναι ήδη συνδεδεμένος ο ιατρός, δεν υπάρχει λόγος να βλέπει τη login.
+// Τον κάνουμε άμεσα ανακατεύθυνση (redirect) στο dashboard.
 if (!empty($_SESSION['doctor_id'])) {
     header('Location: dashboard.php');
     exit;
 }
 
-// CSRF token
+// CSRF token: Μηχανισμός προστασίας (αποτροπή πλαστογράφησης αιτήματος από άλλο site)
 if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // Δημιουργία τυχαίου token
 }
 $csrf = $_SESSION['csrf_token'];
 
-$error = '';
-$maxAttempts = 5;
-$lockoutTime = 300; // 5 λεπτά
+$error = ''; // Μεταβλητή για αποθήκευση μηνυμάτων λάθους
+$maxAttempts = 5; // Μέγιστος επιτρεπτός αριθμός λανθασμένων προσπαθειών
+$lockoutTime = 300; // Χρόνος κλειδώματος σε δευτερόλεπτα (5 λεπτά)
 
-/* ===== ΕΠΕΞΕΡΓΑΣΙΑ LOGIN ===== */
+/* ΕΠΕΞΕΡΓΑΣΙΑ LOGIN (Όταν ο χρήστης πατάει "Σύνδεση") */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // CSRF check
+    // Έλεγχος εγκυρότητας του CSRF token
     if (
         empty($_POST['csrf_token']) ||
         !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])
@@ -32,18 +34,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Μη έγκυρο αίτημα. Παρακαλώ δοκιμάστε ξανά.';
     } else {
 
-        // Brute-force protection
+        // Brute-force protection: Έλεγχος προσπαθειών για αποτροπή μαζικών δοκιμών κωδικών
         $attempts = $_SESSION['login_attempts'] ?? 0;
         $lastAttempt = $_SESSION['last_attempt_time'] ?? 0;
 
+        // Αν ξεπέρασε το όριο, κλειδώνουμε το login προσωρινά
         if ($attempts >= $maxAttempts && (time() - $lastAttempt) < $lockoutTime) {
             $remaining = $lockoutTime - (time() - $lastAttempt);
             $error = "Πολλές αποτυχημένες προσπάθειες. Δοκιμάστε ξανά σε " . ceil($remaining/60) . " λεπτό(ά).";
         } else {
+            // Αν πέρασε ο χρόνος τιμωρίας, μηδενίζουμε τις προσπάθειες
             if ((time() - $lastAttempt) >= $lockoutTime) {
                 $_SESSION['login_attempts'] = 0;
             }
 
+            // Λήψη των στοιχείων που πληκτρολόγησε ο χρήστης
             $username = trim($_POST['username'] ?? '');
             $password = $_POST['password'] ?? '';
 
@@ -51,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Παρακαλώ συμπληρώστε όλα τα πεδία.';
             } else {
                 $pdo = getDB();
+                // Αναζήτηση του ιατρού στη βάση δεδομένων με βάση το username
                 $stmt = $pdo->prepare(
                     "SELECT id, username, password, full_name, specialty
                      FROM doctors
@@ -60,27 +66,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([':username' => $username]);
                 $doctor = $stmt->fetch();
 
+                // Έλεγχος αν βρέθηκε ο ιατρός ΚΑΙ αν ο κωδικός ταιριάζει με το κρυπτογραφημένο (hash)
                 if ($doctor && password_verify($password, $doctor['password'])) {
-                    // Επιτυχής σύνδεση
-                    session_regenerate_id(true); // Αποφυγή session fixation
+                    // Επιτυχής Σύνδεση
+                    session_regenerate_id(true); // Αλλαγή του Session ID για ασφάλεια (αποτροπή session fixation)
+                    
+                    // Αποθήκευση των στοιχείων στο Session για να τον αναγνωρίζουμε σε κάθε σελίδα
                     $_SESSION['doctor_id']    = $doctor['id'];
                     $_SESSION['doctor_name']  = $doctor['full_name'];
                     $_SESSION['doctor_spec']  = $doctor['specialty'];
                     $_SESSION['doctor_user']  = $doctor['username'];
+                    
+                    // Καθαρισμός των μεταβλητών brute-force
                     unset($_SESSION['login_attempts'], $_SESSION['last_attempt_time']);
+                    
+                    // Ανακατεύθυνση στον Πίνακα Ελέγχου
                     header('Location: dashboard.php');
                     exit;
                 } else {
-                    $_SESSION['login_attempts'] = ($attempts + 1);
-                    $_SESSION['last_attempt_time'] = time();
+                    // Αποτυχημένη Σύνδεση
+                    $_SESSION['login_attempts'] = ($attempts + 1); // Αυξάνουμε τις λανθασμένες προσπάθειες
+                    $_SESSION['last_attempt_time'] = time(); // Καταγράφουμε την ώρα αποτυχίας
                     $remaining = $maxAttempts - ($_SESSION['login_attempts']);
+                    
                     $error = 'Λάθος όνομα χρήστη ή κωδικός.' .
                              ($remaining > 0 ? " Απομένουν {$remaining} προσπάθεια(ες)." : '');
                 }
             }
         }
     }
-    // Ανανέωση CSRF μετά από κάθε POST
+    // Ανανέωση του CSRF token μετά από κάθε POST αίτημα για μέγιστη ασφάλεια
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     $csrf = $_SESSION['csrf_token'];
 }
@@ -90,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Σύνδεση Ιατρού — MedBook</title>
+  <title>Σύνδεση Ιατρού - MedBook</title>
   <meta name="description" content="Ασφαλής σύνδεση στο σύστημα διαχείρισης ιατρικών ραντεβού.">
   <link rel="stylesheet" href="css/style.css?v=5">
 </head>

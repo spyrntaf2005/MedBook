@@ -1,6 +1,6 @@
 <?php
 /**
- * logout.php — Αποσύνδεση Ιατρού
+ * logout.php - Αποσύνδεση Ιατρού
  */
 session_start();
 

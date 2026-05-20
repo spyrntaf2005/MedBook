@@ -3,17 +3,20 @@
  * book_appointment.php
  * Επεξεργασία φόρμας κλεισίματος ραντεβού
  * Ασφάλεια: CSRF, PDO Prepared Statements, XSS, validation
+ * Σε αυτό το αρχείο δεν υπάρχει HTML, λειτουργεί μόνο στο παρασκήνιο (backend)
+ * για να δεχτεί τα δεδομένα από το appointment.php.
  */
 session_start();
 require_once 'config/db.php';
 
-// Μόνο POST επιτρέπεται
+// Μόνο αιτήματα τύπου POST (μέσω φόρμας) επιτρέπονται εδώ.
+// Αν κάποιος πάει να μπει γράφοντας το URL, τον διώχνουμε πίσω στη φόρμα.
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: appointment.php');
     exit;
 }
 
-/* ===== CSRF ΠΡΟΣΤΑΣΙΑ ===== */
+/* CSRF ΠΡΟΣΤΑΣΙΑ */
 if (
     empty($_POST['csrf_token']) ||
     !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])
@@ -25,7 +28,7 @@ if (
 // Ανανέωση CSRF token μετά από κάθε χρήση
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-/* ===== SANITIZE & VALIDATE ===== */
+/* SANITIZE & VALIDATE */
 $name   = trim($_POST['patient_name']   ?? '');
 $amka   = trim($_POST['amka']           ?? '');
 $phone  = trim($_POST['patient_phone']  ?? '');
@@ -73,7 +76,7 @@ if (!in_array($time, $validTimes, true)) {
     $errors[] = 'Μη έγκυρη ώρα ραντεβού.';
 }
 
-/* ===== ΑΝ ΥΠΑΡΧΟΥΝ ΣΦΑΛΜΑΤΑ ===== */
+/* ΑΝ ΥΠΑΡΧΟΥΝ ΣΦΑΛΜΑΤΑ */
 if (!empty($errors)) {
     $_SESSION['flash_error'] = implode('<br>', $errors);
     $_SESSION['form_old']    = [
@@ -89,7 +92,7 @@ if (!empty($errors)) {
     exit;
 }
 
-/* ===== ΕΛΕΓΧΟΣ ΔΙΑΘΕΣΙΜΟΤΗΤΑΣ (Anti-Double-Booking) ===== */
+/* ΕΛΕΓΧΟΣ ΔΙΑΘΕΣΙΜΟΤΗΤΑΣ (Anti-Double-Booking) */
 $pdo = getDB();
 $doctorId = 1; // Μοναδικός ιατρός
 
@@ -129,7 +132,7 @@ try {
         exit;
     }
 
-    /* ===== ΑΠΟΘΗΚΕΥΣΗ ΡΑΝΤΕΒΟΥ ===== */
+    /* ΑΠΟΘΗΚΕΥΣΗ ΡΑΝΤΕΒΟΥ */
     $insertStmt = $pdo->prepare(
         "INSERT INTO appointments
             (doctor_id, patient_name, amka, patient_phone, patient_email, visit_reason, appointment_date, appointment_time, status)

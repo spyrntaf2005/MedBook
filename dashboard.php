@@ -1,46 +1,56 @@
 <?php
 /**
- * dashboard.php — Πίνακας Ελέγχου Ιατρού
+ * dashboard.php - Πίνακας Ελέγχου Ιατρού
+ * Αυτή η σελίδα είναι το κεντρικό διαχειριστικό εργαλείο.
+ * Μόνο συνδεδεμένοι χρήστες (ιατροί) έχουν πρόσβαση εδώ.
  */
-session_start();
-require_once 'config/db.php';
+session_start(); // Έναρξη του session
+require_once 'config/db.php'; // Σύνδεση με τη βάση δεδομένων
 
-// Προστασία: μόνο συνδεδεμένοι ιατροί
+// Προστασία: Αν δεν υπάρχει το 'doctor_id' στο session, 
+// σημαίνει ότι δεν έχει κάνει login. Τον ανακατευθύνουμε στη login.php!
 if (empty($_SESSION['doctor_id'])) {
     header('Location: login.php');
     exit;
 }
 
+// Αποθήκευση στοιχείων του ιατρού σε μεταβλητές
 $doctorId   = (int)$_SESSION['doctor_id'];
 $doctorName = htmlspecialchars($_SESSION['doctor_name'] ?? 'Ιατρός');
 
-// CSRF token
+// CSRF token: Μηχανισμός προστασίας από επιθέσεις (Cross-Site Request Forgery)
 if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // Δημιουργεί έναν τυχαίο κωδικό
 }
 $csrf = $_SESSION['csrf_token'];
 
-$pdo = getDB();
+$pdo = getDB(); // Παίρνουμε το αντικείμενο PDO για επικοινωνία με τη MySQL
 
-/* ===== ΦΙΛΤΡΑ ===== */
+/* ΦΙΛΤΡΑ (Δυναμική Αναζήτηση) */
+// Παίρνουμε τις τιμές από το URL (π.χ. dashboard.php?date=...&status=...)
 $filterDate   = trim($_GET['date']   ?? '');
 $filterStatus = trim($_GET['status'] ?? '');
 
-$where  = ['doctor_id = :doctor_id'];
+// Δημιουργία των συνθηκών (WHERE) για το SQL Query
+$where  = ['doctor_id = :doctor_id']; // Δείχνουμε μόνο τα ραντεβού αυτού του ιατρού
 $params = [':doctor_id' => $doctorId];
 
+// Αν ο ιατρός έδωσε ημερομηνία, την προσθέτουμε στο φίλτρο
 if ($filterDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $filterDate)) {
     $where[]             = 'appointment_date = :date';
     $params[':date']     = $filterDate;
 }
+// Αν έδωσε κατάσταση (status), την προσθέτουμε στο φίλτρο
 if (in_array($filterStatus, ['pending','confirmed','cancelled'], true)) {
     $where[]              = 'status = :status';
     $params[':status']    = $filterStatus;
 }
 
+// Ενώνουμε όλες τις συνθήκες με τη λέξη ' AND ' για το τελικό query
 $whereSQL = implode(' AND ', $where);
 
-/* ===== ΣΤΑΤΙΣΤΙΚΑ ===== */
+/* ΣΤΑΤΙΣΤΙΚΑ */
+// Μετράμε πόσα ραντεβού υπάρχουν συνολικά και πόσα ανά κατηγορία (για τα κουτάκια ψηλά)
 $statStmt = $pdo->prepare(
     "SELECT
        COUNT(*) AS total,
@@ -53,28 +63,35 @@ $statStmt = $pdo->prepare(
 $statStmt->execute([':doctor_id' => $doctorId]);
 $stats = $statStmt->fetch();
 
-/* ===== ΡΑΝΤΕΒΟΥ ===== */
+/* ΡΑΝΤΕΒΟΥ */
+// Τραβάμε όλα τα ραντεβού που ταιριάζουν με τα φίλτρα
 $apptStmt = $pdo->prepare(
     "SELECT id, patient_name, amka, patient_phone, patient_email,
             visit_reason, appointment_date, appointment_time, status, created_at
      FROM appointments
      WHERE {$whereSQL}
-     ORDER BY appointment_date ASC, appointment_time ASC"
+     ORDER BY appointment_date ASC, appointment_time ASC" // Ταξινόμηση ανά ημερομηνία & ώρα
 );
 $apptStmt->execute($params);
-$appointments = $apptStmt->fetchAll();
+$appointments = $apptStmt->fetchAll(); // Φέρνουμε όλα τα αποτελέσματα ως πίνακα
 
-/* ===== FLASH MESSAGES ===== */
+/* FLASH MESSAGES */
+// Μηνύματα επιτυχίας ή σφάλματος (π.χ. "Αποθηκεύτηκε!")
 $flashSuccess = $_SESSION['flash_success'] ?? null;
 $flashError   = $_SESSION['flash_error']   ?? null;
+// Μόλις τα διαβάσουμε, τα διαγράφουμε (unset) για να μην εμφανιστούν ξανά σε ανανέωση
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
-/* ===== STATUS LABELS ===== */
+/* STATUS LABELS */
+// Ελληνικές μεταφράσεις και κλάσεις CSS για τα "ταμπελάκια" κατάστασης των ραντεβού
 $statusLabel = ['pending'=>'Εκκρεμεί','confirmed'=>'Επιβεβαιωμένο','cancelled'=>'Ακυρωμένο'];
 $statusClass = ['pending'=>'status-pending','confirmed'=>'status-confirmed','cancelled'=>'status-cancelled'];
 $statusDot   = ['pending'=>'','confirmed'=>'','cancelled'=>''];
 
-/* ===== FORMAT DATE ===== */
+/* FORMAT DATE */
+/**
+ * Βοηθητική συνάρτηση: Μετατρέπει την ημερομηνία 2026-05-30 σε πιο φιλική "30 Μαΐ 2026"
+ */
 function greekDate(string $dateStr): string {
     $months = ['01'=>'Ιαν','02'=>'Φεβ','03'=>'Μαρ','04'=>'Απρ','05'=>'Μαΐ','06'=>'Ιουν',
                '07'=>'Ιουλ','08'=>'Αυγ','09'=>'Σεπ','10'=>'Οκτ','11'=>'Νοε','12'=>'Δεκ'];
@@ -88,7 +105,7 @@ function greekDate(string $dateStr): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>">
-  <title>Dashboard — MedBook</title>
+  <title>Dashboard - MedBook</title>
   <meta name="description" content="Πίνακας διαχείρισης ιατρικών ραντεβού.">
   <link rel="stylesheet" href="css/style.css?v=5">
 </head>

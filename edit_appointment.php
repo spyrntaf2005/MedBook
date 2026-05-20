@@ -1,31 +1,36 @@
 <?php
 /**
- * edit_appointment.php — Επεξεργασία Ραντεβού από τον Ιατρό
+ * edit_appointment.php - Επεξεργασία Ραντεβού από τον Ιατρό
+ * Σε αυτή τη σελίδα ο ιατρός μπορεί να αλλάξει όλα τα στοιχεία 
+ * ενός ραντεβού (π.χ. να διορθώσει το τηλέφωνο ή να αλλάξει την ώρα).
  */
 session_start();
 require_once 'config/db.php';
 
+// Έλεγχος πρόσβασης: Μόνο συνδεδεμένοι ιατροί επιτρέπονται
 if (empty($_SESSION['doctor_id'])) {
     header('Location: login.php');
     exit;
 }
 $doctorId = (int)$_SESSION['doctor_id'];
 
+// Δημιουργία ή ανάκτηση του CSRF token για ασφάλεια της φόρμας
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 $csrf = $_SESSION['csrf_token'];
 
 $pdo = getDB();
-$id  = (int)($_GET['id'] ?? 0);
+$id  = (int)($_GET['id'] ?? 0); // Το ID του ραντεβού που επεξεργαζόμαστε
 
-// Φόρτωση ραντεβού (μόνο του συγκεκριμένου ιατρού)
+// Φόρτωση ραντεβού (εξασφαλίζοντας ότι ανήκει αποκλειστικά σε αυτόν τον ιατρό)
 $stmt = $pdo->prepare(
     "SELECT * FROM appointments WHERE id = :id AND doctor_id = :doctor_id LIMIT 1"
 );
 $stmt->execute([':id' => $id, ':doctor_id' => $doctorId]);
 $appt = $stmt->fetch();
 
+// Αν δεν βρεθεί ραντεβού (π.χ. πείραξαν το URL), επιστροφή στο dashboard
 if (!$appt) {
     $_SESSION['flash_error'] = 'Το ραντεβού δεν βρέθηκε.';
     header('Location: dashboard.php');
@@ -35,7 +40,7 @@ if (!$appt) {
 $errors   = [];
 $success  = false;
 
-/* ===== ΕΠΕΞΕΡΓΑΣΙΑ POST ===== */
+/* ΕΠΕΞΕΡΓΑΣΙΑ POST (Όταν πατηθεί η "Αποθήκευση") */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (
         empty($_POST['csrf_token']) ||
@@ -108,7 +113,7 @@ for ($h = 9; $h < 18; $h++) { $timeSlots[] = sprintf('%02d:00',$h); $timeSlots[]
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Επεξεργασία Ραντεβού #<?= $id ?> — MedBook</title>
+  <title>Επεξεργασία Ραντεβού #<?= $id ?> - MedBook</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>

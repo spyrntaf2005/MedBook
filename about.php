@@ -1,10 +1,15 @@
-<?php session_start(); ?>
+<?php
+/**
+ * about.php - Σελίδα Σχετικά με Εμάς
+ * Πληροφορίες για τον ιατρό και το ιατρείο.
+ */
+ session_start(); ?>
 <!DOCTYPE html>
 <html lang="el">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Σχετικά με εμάς — MedBook</title>
+  <title>Σχετικά με εμάς - MedBook</title>
   <meta name="description" content="Λίγα λόγια για το ιατρείο μας, ώρες λειτουργίας και στοιχεία επικοινωνίας.">
   <link rel="stylesheet" href="css/style.css?v=5">
 </head>

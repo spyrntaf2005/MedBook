@@ -1,25 +1,31 @@
 <?php
-session_start();
+/**
+ * appointment.php - Σελίδα Φόρμας Ραντεβού
+ * Αυτό το αρχείο εμφανίζει τη φόρμα στους ασθενείς για να κλείσουν ραντεβού.
+ */
+session_start(); // Έναρξη του session
 
-// CSRF token δημιουργία
+// Δημιουργία CSRF token : Παράγει έναν μοναδικό κωδικό για ασφάλεια της φόρμας και το αποθηκεύει στο session 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 $csrf = $_SESSION['csrf_token'];
 
-// Ώρες ραντεβού (κάθε 30 λεπτά, 09:00–17:30)
+// Ώρες ραντεβού: Δημιουργία πίνακα με τις διαθέσιμες ώρες (κάθε 30 λεπτά, 09:00–17:30)
 $timeSlots = [];
 for ($h = 9; $h < 18; $h++) {
-    $timeSlots[] = sprintf('%02d:00', $h);
-    $timeSlots[] = sprintf('%02d:30', $h);
+    $timeSlots[] = sprintf('%02d:00', $h); // π.χ. 09:00
+    $timeSlots[] = sprintf('%02d:30', $h); // π.χ. 09:30
 }
 
-// Διατήρηση τιμών φόρμας μετά από σφάλμα
+// Διατήρηση τιμών φόρμας: Αν η υποβολή απέτυχε, ανακτούμε τις παλιές τιμές ώστε ο χρήστης να μην τα γράφει όλα από την αρχή
 $old = $_SESSION['form_old'] ?? [];
 unset($_SESSION['form_old']);
+
+// Ανάκτηση μηνυμάτων σφάλματος ή προειδοποίησης από προηγούμενη αποτυχημένη υποβολή
 $flashError   = $_SESSION['flash_error']   ?? null;
 $flashWarning = $_SESSION['flash_warning'] ?? null;
-unset($_SESSION['flash_error'], $_SESSION['flash_warning']);
+unset($_SESSION['flash_error'], $_SESSION['flash_warning']); // Διαγραφή τους μετά την ανάγνωση
 ?>
 <!DOCTYPE html>
 <html lang="el">
@@ -27,7 +33,7 @@ unset($_SESSION['flash_error'], $_SESSION['flash_warning']);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= htmlspecialchars($csrf) ?>">
-  <title>Κλείστε Ραντεβού — MedBook</title>
+  <title>Κλείστε Ραντεβού - MedBook</title>
   <meta name="description" content="Κλείστε εύκολα και γρήγορα ιατρικό ραντεβού online.">
   <link rel="stylesheet" href="css/style.css?v=5">
 </head>

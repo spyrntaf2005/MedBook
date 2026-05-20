@@ -1,6 +1,6 @@
 <?php
 /**
- * delete_appointment.php — Διαγραφή Ραντεβού
+ * delete_appointment.php - Διαγραφή Ραντεβού
  */
 session_start();
 require_once 'config/db.php';
