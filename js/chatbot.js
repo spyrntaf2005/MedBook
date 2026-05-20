@@ -6,22 +6,26 @@ document.addEventListener('DOMContentLoaded', function () {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 380px; /* Μεγαλύτερο αρχικό πλάτος */
-            height: 550px; /* Μεγαλύτερο αρχικό ύψος */
-            min-width: 300px;
-            min-height: 400px;
-            max-width: 90vw;
-            max-height: 90vh;
+            width: min(90vw, 380px); /* Προσαρμόζεται στην οθόνη */
+            height: min(80vh, 550px);
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 5px 25px rgba(0,0,0,0.2);
             display: none;
             flex-direction: column;
             overflow: hidden;
-            resize: both; /* Επιτρέπει την αλλαγή μεγέθους με τον κέρσορα */
             z-index: 1000;
             font-family: 'Inter', sans-serif;
             border: 1px solid #e2e8f0;
+        }
+        .chatbot-resizer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 15px;
+            height: 15px;
+            cursor: nwse-resize;
+            z-index: 1001;
         }
         .chatbot-container.active {
             display: flex;
@@ -148,6 +152,35 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
     `;
     document.body.appendChild(chatContainer);
+
+    // Custom Resizer Logic
+    const resizer = document.createElement('div');
+    resizer.className = 'chatbot-resizer';
+    chatContainer.appendChild(resizer);
+
+    let isResizing = false;
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        e.preventDefault(); // Αποφυγή επιλογής κειμένου
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        // Υπολογισμός νέου μεγέθους, επειδή το παράθυρο είναι fixed στο κάτω-δεξιά (bottom: 20px, right: 20px)
+        let newWidth = window.innerWidth - e.clientX - 20;
+        let newHeight = window.innerHeight - e.clientY - 20;
+        
+        // Όρια μεγέθους
+        newWidth = Math.max(300, Math.min(newWidth, window.innerWidth * 0.9));
+        newHeight = Math.max(400, Math.min(newHeight, window.innerHeight * 0.9));
+        
+        chatContainer.style.width = newWidth + 'px';
+        chatContainer.style.height = newHeight + 'px';
+    });
+
+    window.addEventListener('mouseup', () => {
+        isResizing = false;
+    });
 
     // Logic
     const chatMessages = document.getElementById('chatMessages');
