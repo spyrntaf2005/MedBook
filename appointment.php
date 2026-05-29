@@ -46,7 +46,7 @@ unset($_SESSION['flash_error'], $_SESSION['flash_warning']); // Διαγραφή
 <section class="section" style="min-height: calc(100vh - 140px);">
   <div class="container">
     <div class="card" style="max-width: 760px; margin: 0 auto;">
-      <h2 class="card-title">📋 Φόρμα Κλεισίματος Ραντεβού</h2>
+      <h2 class="card-title">Φόρμα Κλεισίματος Ραντεβού</h2>
       <p class="card-subtitle">Συμπληρώστε τα παρακάτω στοιχεία. Όλα τα πεδία με <span style="color:var(--danger)">*</span> είναι υποχρεωτικά.</p>
 
       <!-- Flash μηνύματα -->

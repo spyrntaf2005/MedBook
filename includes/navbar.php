@@ -12,6 +12,6 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
     <a href="appointment.php" <?= $currentPage === 'appointment.php' ? 'style="color:var(--primary);font-weight:700;"' : '' ?>>Κλείστε Ραντεβού</a>
   </div>
   <div class="navbar-right">
-    <a href="login.php" class="btn-nav-login">Σύνδεση Ιατρού</a>
+    <a href="login.php" class="btn-nav-login">Σύνδεση</a>
   </div>
 </nav>

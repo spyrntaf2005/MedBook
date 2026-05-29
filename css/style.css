@@ -324,7 +324,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* === CONFIRMATION PAGE === */
 .confirm-wrapper {
-  min-height: 80vh;
+  min-height: calc(100vh - 140px);
   display: flex;
   align-items: center;
   justify-content: center;

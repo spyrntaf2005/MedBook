@@ -129,7 +129,7 @@ for ($h = 9; $h < 18; $h++) { $timeSlots[] = sprintf('%02d:00',$h); $timeSlots[]
 <section class="section">
   <div class="container">
     <div class="card" style="max-width:760px;margin:0 auto;">
-      <h2 class="card-title">✏️ Επεξεργασία Ραντεβού <span style="color:var(--primary);">#<?= $id ?></span></h2>
+      <h2 class="card-title">Επεξεργασία Ραντεβού <span style="color:var(--primary);">#<?= $id ?></span></h2>
       <p class="card-subtitle">Τροποποιήστε τα στοιχεία του ραντεβού και πατήστε «Αποθήκευση».</p>
 
       <?php if (!empty($errors)): ?>
@@ -187,7 +187,7 @@ for ($h = 9; $h < 18; $h++) { $timeSlots[] = sprintf('%02d:00',$h); $timeSlots[]
         </div>
 
         <div class="flex gap-1 mt-3 flex-wrap">
-          <button type="submit" class="btn btn-primary btn-lg">💾 Αποθήκευση</button>
+          <button type="submit" class="btn btn-primary btn-lg">Αποθήκευση</button>
           <a href="dashboard.php" class="btn btn-outline btn-lg">← Ακύρωση</a>
         </div>
       </form>

@@ -15,7 +15,7 @@ if (!empty($_SESSION['doctor_id'])) {
 
 // CSRF token: Μηχανισμός προστασίας (αποτροπή πλαστογράφησης αιτήματος από άλλο site)
 if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // Δημιουργία τυχαίου token
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // Δημιουργία token
 }
 $csrf = $_SESSION['csrf_token'];
 
@@ -116,8 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="login-logo">
       <span class="icon">🩺</span>
-      <h2>Σύνδεση Ιατρού</h2>
-      <p>Πρόσβαση στον πίνακα διαχείρισης</p>
+      <h2>Καλως ορίσατε, γιατρέ!</h2>
+      <p>Παρακαλώ συμπληρώστε τα στοιχεία σύνδεσης σας</p>
     </div>
 
     <?php if ($error): ?>
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <button type="submit" class="btn btn-primary btn-full btn-lg">
-        🔐 Σύνδεση
+       Σύνδεση
       </button>
     </form>
 

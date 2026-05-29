@@ -1,4 +1,4 @@
-<?php
+e<?php
 /**
  * confirmation.php - Σελίδα Επιβεβαίωσης Ραντεβού
  */
@@ -31,7 +31,7 @@ foreach ($months as $en => $gr) $dateFormatted = str_replace($en, $gr, $dateForm
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Επιβεβαίωση Ραντεβού - MedBook</title>
   <meta name="description" content="Το ραντεβού σας έχει καταχωρηθεί επιτυχώς.">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 

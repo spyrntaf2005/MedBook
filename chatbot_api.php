@@ -104,17 +104,17 @@ try {
     // STATE: IDLE (Γενική Κατάσταση)
     if ($state === 'idle') {
         // Αν ο χρήστης ζητήσει αλλαγή/μετάθεση του ραντεβού του
-        if (str_contains($messageLower, 'αλλαγ') || str_contains($messageLower, 'μεταθεσ')) {
+        if (preg_match('/αλλαγ|αλλάγ|αλλαξ|αλλάξ|μεταθεσ|μετάθεσ/u', $messageLower)) {
             $_SESSION['chat_state'] = 'wait_id'; // Αλλάζουμε την κατάσταση σε 'Αναμονή ID'
             $_SESSION['chat_action'] = 'change'; // Καταγράφουμε ότι θέλει να κάνει "αλλαγή"
-            echo json_encode(['reply' => 'Για να αλλάξουμε το ραντεβού σας, παρακαλώ γράψτε μου τον αριθμό του ραντεβού (#ID) ή το ΑΜΚΑ σας.']);
+            echo json_encode(['reply' => 'Για να αλλάξουμε το ραντεβού σας, παρακαλώ γράψτε μου μόνο τον αριθμό του ραντεβού σας (#ID).']);
             exit;
         } 
         // Αν ο χρήστης ζητήσει ακύρωση του ραντεβού του
-        elseif (str_contains($messageLower, 'ακυρωσ')) {
+        elseif (preg_match('/ακυρω|ακυρώ/u', $messageLower)) {
             $_SESSION['chat_state'] = 'wait_id'; // Αλλάζουμε την κατάσταση σε 'Αναμονή ID'
             $_SESSION['chat_action'] = 'cancel'; // Καταγράφουμε ότι θέλει να κάνει "ακύρωση"
-            echo json_encode(['reply' => 'Για να ακυρώσουμε το ραντεβού σας, παρακαλώ γράψτε μου τον αριθμό του ραντεβού (#ID) ή το ΑΜΚΑ σας.']);
+            echo json_encode(['reply' => 'Για να ακυρώσουμε το ραντεβού σας, παρακαλώ γράψτε μου μόνο τον αριθμό του ραντεβού σας (#ID).']);
             exit;
         } 
         // Αν δεν ζητάει ούτε αλλαγή ούτε ακύρωση, η ερώτηση πηγαίνει στο AI (Gemini API)
@@ -137,22 +137,25 @@ try {
         // Κρατάμε μόνο τους αριθμούς από το μήνυμα
         $idOrAmka = preg_replace('/[^0-9]/', '', $message);
         if (empty($idOrAmka)) {
-            echo json_encode(['reply' => 'Δεν αναγνώρισα κάποιον αριθμό. Παρακαλώ δώστε το ΑΜΚΑ (11 ψηφία) ή το #ID του ραντεβού σας.']);
+            echo json_encode(['reply' => 'Δεν αναγνώρισα κάποιον αριθμό. Παρακαλώ δώστε μόνο το #ID του ραντεβού σας.']);
             exit;
         }
 
-        // Αν είναι 11 ψηφία, σημαίνει ότι είναι ΑΜΚΑ, αλλιώς υποθέτουμε ότι είναι ID ραντεβού
-        if (strlen($idOrAmka) === 11) {
-            $stmt = $pdo->prepare("SELECT * FROM appointments WHERE amka = :val AND status != 'cancelled' ORDER BY appointment_date DESC LIMIT 1");
-        } else {
-            $stmt = $pdo->prepare("SELECT * FROM appointments WHERE id = :val AND status != 'cancelled' ORDER BY appointment_date DESC LIMIT 1");
-        }
+        // Υποθέτουμε ότι είναι ID ραντεβού
+        $stmt = $pdo->prepare("SELECT * FROM appointments WHERE id = :val AND status != 'cancelled' ORDER BY appointment_date DESC LIMIT 1");
         $stmt->execute([':val' => $idOrAmka]);
         $appt = $stmt->fetch();
 
         // Έλεγχος αν βρέθηκε ραντεβού στη βάση
         if (!$appt) {
             echo json_encode(['reply' => 'Δεν βρέθηκε ενεργό ραντεβού με αυτά τα στοιχεία. Προσπαθήστε ξανά ή γράψτε "άκυρο".']);
+            exit;
+        }
+
+        // Έλεγχος αν το ραντεβού αφορά παρελθοντική ημερομηνία
+        if ($appt['appointment_date'] < date('Y-m-d')) {
+            $_SESSION['chat_state'] = 'idle';
+            echo json_encode(['reply' => 'Το συγκεκριμένο ραντεβού έχει ήδη περάσει χρονικά και δεν μπορεί να μεταβληθεί. Παρακαλώ, μεταβείτε στην επιλογή "Κλείστε Ραντεβού" στο μενού για να προγραμματίσετε μια νέα επίσκεψη!']);
             exit;
         }
 
@@ -257,15 +260,35 @@ try {
             exit;
         }
 
-        // Οριστική Ενημέρωση (Update) του ραντεβού στη Βάση Δεδομένων
-        $upd = $pdo->prepare("UPDATE appointments SET appointment_date = :date, appointment_time = :time, status = 'pending' WHERE id = :id");
-        $upd->execute([':date' => $date, ':time' => $time, ':id' => $id]);
-
-        // Ολοκλήρωση διαδικασίας και επιστροφή σε κατάσταση idle
-        $_SESSION['chat_state'] = 'idle';
+        // Η αλλαγή είναι εφικτή, ζητάμε επιβεβαίωση
+        $_SESSION['chat_new_time'] = $time;
+        $_SESSION['chat_state'] = 'confirm_change';
         $formattedDate = date('d/m/Y', strtotime($date));
-        echo json_encode(['reply' => "Το ραντεβού σας μεταφέρθηκε επιτυχώς για τις {$formattedDate} στις {$time}. Θα λάβετε σύντομα επιβεβαίωση!"]);
+        echo json_encode(['reply' => "Η αλλαγή είναι εφικτή! Θέλετε να προχωρήσω με την αλλαγή του ραντεβού σας για τις {$formattedDate} στις {$time}; (Απαντήστε με 'Ναι' ή 'Όχι')"]);
         exit;
+    }
+
+    // STATE: CONFIRM_CHANGE (Επιβεβαίωση Αλλαγής)
+    if ($state === 'confirm_change') {
+        if (str_contains($messageLower, 'ναι')) {
+            $date = $_SESSION['chat_new_date'];
+            $time = $_SESSION['chat_new_time'];
+            $id = $_SESSION['chat_appt_id'];
+
+            // Οριστική Ενημέρωση (Update) του ραντεβού στη Βάση Δεδομένων
+            $upd = $pdo->prepare("UPDATE appointments SET appointment_date = :date, appointment_time = :time, status = 'pending' WHERE id = :id");
+            $upd->execute([':date' => $date, ':time' => $time, ':id' => $id]);
+
+            // Ολοκλήρωση διαδικασίας και επιστροφή σε κατάσταση idle
+            $_SESSION['chat_state'] = 'idle';
+            $formattedDate = date('d/m/Y', strtotime($date));
+            echo json_encode(['reply' => "Η αλλαγή ολοκληρώθηκε επιτυχώς! Το νέο σας ραντεβού είναι στις {$formattedDate} στις {$time}."]);
+            exit;
+        } else {
+            $_SESSION['chat_state'] = 'idle';
+            echo json_encode(['reply' => 'Η αλλαγή ακυρώθηκε. Το ραντεβού σας παραμένει ως έχει.']);
+            exit;
+        }
     }
 
 } catch (Exception $e) {
